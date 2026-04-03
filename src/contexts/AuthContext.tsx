@@ -10,6 +10,7 @@ import {
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import type { User, UserRole } from '@/types';
+import { logError, logInfo } from '@/lib/errorLogger';
 
 interface AuthContextType {
   currentUser: FirebaseUser | null;
@@ -43,38 +44,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   async function fetchUserProfile(uid: string) {
-    const ref = doc(db, 'users', uid);
-    const snap = await getDoc(ref);
-    if (snap.exists()) {
-      setUserProfile(snap.data() as User);
+    try {
+      const ref = doc(db, 'users', uid);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        setUserProfile(snap.data() as User);
+      }
+    } catch (err: any) {
+      await logError({ message: err.message, error: err, component: 'AuthContext', action: 'fetchUserProfile', userId: uid });
     }
   }
 
   async function login(email: string, password: string) {
-    const result = await signInWithEmailAndPassword(auth, email, password);
-    await fetchUserProfile(result.user.uid);
+    try {
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      await fetchUserProfile(result.user.uid);
+      await logInfo('User logged in', { component: 'AuthContext', action: 'login', userId: result.user.uid, userEmail: email });
+    } catch (err: any) {
+      await logError({ message: err.message, error: err, component: 'AuthContext', action: 'login', userEmail: email });
+      throw err;
+    }
   }
 
   async function register({ email, password, displayName, phone, role = 'passenger' }: RegisterData) {
-    const result = await createUserWithEmailAndPassword(auth, email, password);
-    await updateProfile(result.user, { displayName });
-
-    const userDoc: Omit<User, 'createdAt'> & { createdAt: ReturnType<typeof serverTimestamp> } = {
-      uid: result.user.uid,
-      email,
-      displayName,
-      role,
-      phone: phone ?? '',
-      address: '',
-      createdAt: serverTimestamp() as ReturnType<typeof serverTimestamp>,
-    };
-
-    await setDoc(doc(db, 'users', result.user.uid), userDoc);
+    try {
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(result.user, { displayName });
+      const userDoc: Omit<User, 'createdAt'> & { createdAt: ReturnType<typeof serverTimestamp> } = {
+        uid: result.user.uid,
+        email,
+        displayName,
+        role,
+        phone: phone ?? '',
+        address: '',
+        createdAt: serverTimestamp() as ReturnType<typeof serverTimestamp>,
+      };
+      await setDoc(doc(db, 'users', result.user.uid), userDoc);
+      await logInfo('User registered', { component: 'AuthContext', action: 'register', userId: result.user.uid, userEmail: email });
+    } catch (err: any) {
+      await logError({ message: err.message, error: err, component: 'AuthContext', action: 'register', userEmail: email });
+      throw err;
+    }
   }
 
   async function logout() {
-    await signOut(auth);
-    setUserProfile(null);
+    try {
+      await signOut(auth);
+      setUserProfile(null);
+    } catch (err: any) {
+      await logError({ message: err.message, error: err, component: 'AuthContext', action: 'logout' });
+      throw err;
+    }
   }
 
   useEffect(() => {
