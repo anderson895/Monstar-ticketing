@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import LandingPage from '@/pages/Landing';
 import AuthPage from '@/pages/Auth';
+import ForgotPassword from '@/pages/ForgotPassword';
+import ResetPassword from '@/pages/ResetPassword';
 import PassengerLayout from '@/components/PassengerLayout';
 import AdminLayout from '@/components/AdminLayout';
 import PassengerDashboard from '@/pages/passenger/Dashboard';
@@ -34,6 +36,8 @@ export default function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/auth" element={<AuthPage />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           
           {/* Passenger Routes */}
           <Route path="/passenger" element={

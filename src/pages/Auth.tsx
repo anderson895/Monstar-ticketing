@@ -232,6 +232,12 @@ export default function AuthPage() {
                 )}
               </div>
 
+              <div className="flex justify-end">
+                <Link to="/forgot-password" className="text-sm text-navy-500 hover:text-navy-700 font-medium transition-colors">
+                  Forgot password?
+                </Link>
+              </div>
+
               <button type="submit" disabled={loading} className="btn-primary w-full py-3 text-base">
                 {loading ? 'Signing in...' : 'Sign In'}
               </button>
