@@ -1,9 +1,20 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 import { Mail, ArrowLeft, Ship, CheckCircle } from 'lucide-react';
 import { FirebaseError } from 'firebase/app';
+
+async function emailExistsInFirestore(email: string): Promise<boolean> {
+  const q = query(
+    collection(db, 'users'),
+    where('email', '==', email.toLowerCase().trim()),
+    limit(1)
+  );
+  const snap = await getDocs(q);
+  return !snap.empty;
+}
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -19,6 +30,13 @@ export default function ForgotPassword() {
       setLoading(true);
       setError('');
 
+      // Check if email is registered in Firestore before sending reset link
+      const exists = await emailExistsInFirestore(email);
+      if (!exists) {
+        setError('No account found with this email address. Please check and try again.');
+        return;
+      }
+
       await sendPasswordResetEmail(auth, email);
 
       setSent(true);
@@ -26,20 +44,13 @@ export default function ForgotPassword() {
       if (err instanceof FirebaseError) {
         switch (err.code) {
           case 'auth/user-not-found':
-            setSent(true); // don't reveal if email exists
-            return;
+            setError('No account found with this email address. Please check and try again.');
+            break;
           case 'auth/invalid-email':
             setError('Invalid email address format.');
             break;
           case 'auth/too-many-requests':
             setError('Too many attempts. Please wait a few minutes and try again.');
-            break;
-          case 'auth/unauthorized-continue-uri':
-            setError('Configuration error: reset domain not authorized. Contact support.');
-            break;
-          case 'auth/missing-continue-uri':
-          case 'auth/invalid-continue-uri':
-            setError('Configuration error with reset link. Contact support.');
             break;
           case 'auth/network-request-failed':
             setError('Network error. Please check your connection and try again.');
