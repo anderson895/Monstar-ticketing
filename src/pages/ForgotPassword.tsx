@@ -19,11 +19,7 @@ export default function ForgotPassword() {
       setLoading(true);
       setError('');
 
-      // actionCodeSettings tells Firebase to redirect to OUR custom reset page
-      await sendPasswordResetEmail(auth, email, {
-        url: window.location.origin + '/reset-password',
-        handleCodeInApp: false,
-      });
+      await sendPasswordResetEmail(auth, email);
 
       setSent(true);
     } catch (err: unknown) {
@@ -38,8 +34,18 @@ export default function ForgotPassword() {
           case 'auth/too-many-requests':
             setError('Too many attempts. Please wait a few minutes and try again.');
             break;
+          case 'auth/unauthorized-continue-uri':
+            setError('Configuration error: reset domain not authorized. Contact support.');
+            break;
+          case 'auth/missing-continue-uri':
+          case 'auth/invalid-continue-uri':
+            setError('Configuration error with reset link. Contact support.');
+            break;
+          case 'auth/network-request-failed':
+            setError('Network error. Please check your connection and try again.');
+            break;
           default:
-            setError('An unexpected error occurred. Please try again.');
+            setError(`An unexpected error occurred (${err.code}). Please try again.`);
         }
       } else {
         setError('An unexpected error occurred. Please try again.');
