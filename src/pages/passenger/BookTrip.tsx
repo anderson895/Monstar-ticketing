@@ -28,8 +28,8 @@ const DISCOUNT_LABELS: Record<string, string> = {
   infant:  'Free (Infant)',
 };
 
-// ── Vehicle types & fares ─────────────────────────────────────
-const VEHICLE_FARES: Record<string, { label: string; fare: number }> = {
+// ── Vehicle types & fares (fallback defaults — trips may override) ──
+const DEFAULT_VEHICLE_FARES: Record<string, { label: string; fare: number }> = {
   bike:       { label: '🚲 Bike',         fare: 700   },
   motorcycle: { label: '🏍️ Motorcycle',   fare: 1200  },
   tricycle:   { label: '🛺 Tricycle',      fare: 1500  },
@@ -77,7 +77,7 @@ async function sendBookingEmails(booking: any, trip: any) {
     <table style="width:100%;border-collapse:collapse;margin-bottom:24px;font-size:14px;">
       <tr><td style="padding:8px 0;color:#64748b;width:40%;">Route</td><td style="padding:8px 0;color:#0f172a;font-weight:600;">${trip.origin} → ${trip.destination}</td></tr>
       <tr><td style="padding:8px 0;color:#64748b;">Vessel</td><td style="padding:8px 0;color:#0f172a;">${trip.vesselName}</td></tr>
-      <tr><td style="padding:8px 0;color:#64748b;">Departure</td><td style="padding:8px 0;color:#0f172a;">${fmtD(trip.departureDate)} at ${trip.departureTime}</td></tr>
+      <tr><td style="padding:8px 0;color:#64748b;">Est. Departure</td><td style="padding:8px 0;color:#0f172a;">${fmtD(trip.departureDate)} at ${trip.departureTime}</td></tr>
     </table>
     <h3 style="margin:0 0 12px;color:#0f172a;font-size:14px;text-transform:uppercase;">Passengers</h3>
     <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:24px;">
@@ -175,6 +175,16 @@ export default function BookTrip() {
 
   const { fields, append, remove } = useFieldArray({ control: form.control, name: 'passengers' });
   const { fields: vehicleFields, append: appendVehicle, remove: removeVehicle } = useFieldArray({ control: form.control, name: 'vehicles' });
+
+  // Resolve vehicle fares from selected trip (or fallback to defaults)
+  const VEHICLE_FARES: Record<string, { label: string; fare: number }> =
+    selectedTrip?.vehicleFares && Object.keys(selectedTrip.vehicleFares).length > 0
+      ? Object.fromEntries(Object.entries(selectedTrip.vehicleFares).filter(([, v]) => v.fare > 0))
+      : DEFAULT_VEHICLE_FARES;
+
+  const vehicleCapacity = selectedTrip?.vehicleCapacity ?? 0; // 0 = unlimited
+  const vehiclesBooked  = selectedTrip?.vehiclesBooked  ?? 0;
+  const vehicleSlotsLeft = vehicleCapacity > 0 ? vehicleCapacity - vehiclesBooked : Infinity;
 
   useEffect(() => {
     getAvailableTrips().then(setTrips).finally(() => setLoadingTrips(false));
@@ -339,7 +349,7 @@ export default function BookTrip() {
                   </div>
                   <div className="flex items-center gap-4 text-xs text-navy-500 mb-4">
                     <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{formatDate(trip.departureDate)}</span>
-                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{trip.departureTime}</span>
+                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" />Est. {trip.departureTime}</span>
                     <span className="flex items-center gap-1"><Users className="w-3 h-3" />{trip.availableSeats} seats</span>
                   </div>
                   <div className="flex items-center justify-between">
@@ -381,7 +391,7 @@ export default function BookTrip() {
             </div>
             <div className="flex-1">
               <div className="font-semibold text-navy-900 text-sm">{selectedTrip.tripName}</div>
-              <div className="text-xs text-navy-500">{selectedTrip.origin} → {selectedTrip.destination} · {formatDate(selectedTrip.departureDate)} {selectedTrip.departureTime}</div>
+              <div className="text-xs text-navy-500">{selectedTrip.origin} → {selectedTrip.destination} · {formatDate(selectedTrip.departureDate)} Est. {selectedTrip.departureTime}</div>
             </div>
             <button type="button" onClick={() => setStep(0)} className="text-xs text-navy-500 hover:text-navy-700 underline">Change</button>
           </div>
@@ -613,10 +623,16 @@ export default function BookTrip() {
                 <button
                   type="button"
                   onClick={() => appendVehicle({ plateNumber: '', vehicleKey: '' })}
-                  className="text-sm text-navy-700 hover:text-navy-900 font-medium flex items-center gap-1 border border-navy-200 px-3 py-1.5 rounded-lg hover:bg-navy-50"
+                  disabled={vehicleCapacity > 0 && vehicleFields.length >= vehicleSlotsLeft}
+                  className="text-sm text-navy-700 hover:text-navy-900 font-medium flex items-center gap-1 border border-navy-200 px-3 py-1.5 rounded-lg hover:bg-navy-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   + Add Another Vehicle
                 </button>
+                {vehicleCapacity > 0 && (
+                  <p className="text-xs text-navy-400 mt-1">
+                    Vehicle capacity: {vehicleSlotsLeft > 0 ? `${vehicleSlotsLeft} slot${vehicleSlotsLeft !== 1 ? 's' : ''} remaining` : 'Full — no more vehicles can be added'}
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -656,7 +672,7 @@ export default function BookTrip() {
               <div>
                 <div className="font-semibold text-navy-900">{selectedTrip.tripName}</div>
                 <div className="text-sm text-navy-500">{selectedTrip.origin} → {selectedTrip.destination}</div>
-                <div className="text-xs text-navy-400 mt-0.5">{formatDateTime(selectedTrip.departureDate + 'T' + selectedTrip.departureTime)}</div>
+                <div className="text-xs text-navy-400 mt-0.5">Est. Departure: {formatDateTime(selectedTrip.departureDate + 'T' + selectedTrip.departureTime)}</div>
               </div>
             </div>
 

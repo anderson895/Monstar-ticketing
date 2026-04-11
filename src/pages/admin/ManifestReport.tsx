@@ -131,7 +131,7 @@ export default function ManifestReport() {
                   <div className="min-w-0">
                     <h3 className="font-display font-bold text-base sm:text-lg truncate">{selectedTrip.tripName}</h3>
                     <p className="text-navy-300 text-sm mt-0.5">{selectedTrip.origin} → {selectedTrip.destination}</p>
-                    <p className="text-navy-400 text-xs mt-1">Departure: {formatDate(selectedTrip.departureDate)} at {selectedTrip.departureTime}</p>
+                    <p className="text-navy-400 text-xs mt-1">Est. Departure: {formatDate(selectedTrip.departureDate)} at {selectedTrip.departureTime}</p>
                   </div>
                   <div className="text-right flex-shrink-0">
                     <div className="font-display text-2xl sm:text-3xl font-bold text-amber-400">{allPassengers.length}</div>

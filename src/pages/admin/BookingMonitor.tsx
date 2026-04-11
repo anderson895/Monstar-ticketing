@@ -214,7 +214,7 @@ export default function BookingMonitor() {
                   <p className="text-xs font-bold text-navy-400 uppercase tracking-wider mb-2">TRIP</p>
                   <p className="font-bold text-navy-900">{tripDetail.tripName}</p>
                   <p className="text-sm text-navy-600 mt-0.5">{tripDetail.origin} → {tripDetail.destination}</p>
-                  <p className="text-xs text-navy-400 mt-1">{formatDate(tripDetail.departureDate)} · {tripDetail.departureTime}</p>
+                  <p className="text-xs text-navy-400 mt-1">{formatDate(tripDetail.departureDate)} · Est. {tripDetail.departureTime}</p>
                 </div>
               )}
 

@@ -200,7 +200,17 @@ export default function TicketView() {
     );
   }
 
-  const canCancel = booking.status === 'pending' || booking.status === 'confirmed';
+  const canCancel = (() => {
+    if (booking.status !== 'pending' && booking.status !== 'confirmed') return false;
+    if (!trip) return false;
+    // Parse departure datetime
+    const depDateTime = new Date(`${trip.departureDate}T${trip.departureTime}`);
+    const now = new Date();
+    const fiveHoursBefore = new Date(depDateTime.getTime() - 5 * 60 * 60 * 1000);
+    return now < fiveHoursBefore;
+  })();
+
+  const cancellationExpired = (booking.status === 'pending' || booking.status === 'confirmed') && !canCancel;
 
   return (
     <div className="space-y-6 animate-fade-in print:space-y-4">
@@ -225,6 +235,11 @@ export default function TicketView() {
               Cancel Booking
             </button>
           )}
+          {cancellationExpired && (
+            <span className="text-xs text-navy-400 border border-navy-200 px-3 py-2 rounded-xl">
+              Cancellation expired (less than 5 hrs before est. departure)
+            </span>
+          )}
           <button onClick={handlePrint} className="btn-outline flex items-center gap-2 text-sm print:hidden">
             <Download className="w-4 h-4" />
             Save / Print
@@ -241,7 +256,7 @@ export default function TicketView() {
             </div>
             <h3 className="font-display text-lg font-bold text-navy-900 text-center mb-2">Cancel Booking?</h3>
             <p className="text-sm text-navy-500 text-center mb-6">
-              Are you sure you want to cancel booking <span className="font-mono font-semibold text-navy-800">{booking.bookingRef}</span>? This action cannot be undone.
+              Are you sure you want to cancel booking <span className="font-mono font-semibold text-navy-800">{booking.bookingRef}</span>? This action cannot be undone. Cancellations are only allowed up to 5 hours before the estimated departure time.
             </p>
             <div className="flex gap-3">
               <button
@@ -319,7 +334,7 @@ export default function TicketView() {
                   <Calendar className="w-3 h-3" />{formatDate(trip.departureDate)}
                 </div>
                 <div className="text-xs text-navy-400 flex items-center justify-center gap-1">
-                  <Clock className="w-3 h-3" />{trip.departureTime}
+                  <Clock className="w-3 h-3" />Est. {trip.departureTime}
                 </div>
               </div>
 
@@ -342,7 +357,7 @@ export default function TicketView() {
                   <Calendar className="w-3 h-3" />{formatDate(trip.arrivalDate)}
                 </div>
                 <div className="text-xs text-navy-400 flex items-center justify-center gap-1">
-                  <Clock className="w-3 h-3" />{trip.arrivalTime}
+                  <Clock className="w-3 h-3" />Est. {trip.arrivalTime}
                 </div>
               </div>
             </div>

@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, KeyboardEvent } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Ship, Plus, Edit2, Trash2, X, Upload, Calendar, Users, MapPin, Clock, Tag } from 'lucide-react';
+import { Ship, Plus, Edit2, Trash2, X, Upload, Calendar, Users, MapPin, Clock, Tag, Car } from 'lucide-react';
 import { getTrips, createTrip, updateTrip, deleteTrip } from '@/services/firestore';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import type { Trip } from '@/types';
@@ -21,10 +21,21 @@ const tripSchema = z.object({
   totalSeats: z.coerce.number().min(1),
   availableSeats: z.coerce.number().min(0),
   baseFare: z.coerce.number().min(0),
+  vehicleCapacity: z.coerce.number().min(0),
   amenities: z.string().optional(),
 });
 
 type TripFormData = z.infer<typeof tripSchema>;
+
+const DEFAULT_VEHICLE_FARES: Record<string, { label: string; fare: number }> = {
+  bike:       { label: '🚲 Bike',         fare: 700   },
+  motorcycle: { label: '🏍️ Motorcycle',   fare: 1200  },
+  tricycle:   { label: '🛺 Tricycle',      fare: 1500  },
+  sedan:      { label: '🚗 Sedan / Car',   fare: 2000  },
+  suv:        { label: '🚙 SUV / Van',     fare: 2400  },
+  pickup:     { label: '🛻 Pickup Truck',  fare: 3000  },
+  truck:      { label: '🚛 Truck',         fare: 3800  },
+};
 
 const inputCls = 'w-full px-3 py-2.5 border border-navy-200 rounded-xl text-sm text-navy-900 focus:outline-none focus:ring-2 focus:ring-navy-500 focus:border-transparent transition-all bg-white';
 const labelCls = 'text-xs font-semibold text-navy-600 block mb-1.5';
@@ -50,6 +61,7 @@ export default function TripManagement() {
   const [vesselImageUrl, setVesselImageUrl] = useState('');
   const [amenityTags, setAmenityTags] = useState<string[]>([]);
   const [amenityInput, setAmenityInput] = useState('');
+  const [vehicleFares, setVehicleFares] = useState<Record<string, { label: string; fare: number }>>(structuredClone(DEFAULT_VEHICLE_FARES));
   const amenityInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<TripFormData>({
@@ -59,6 +71,7 @@ export default function TripManagement() {
       totalSeats: 200,
       availableSeats: 200,
       baseFare: 0,
+      vehicleCapacity: 0,
       amenities: '',
     },
   });
@@ -77,11 +90,13 @@ export default function TripManagement() {
     setVesselImageUrl('');
     setAmenityTags([]);
     setAmenityInput('');
+    setVehicleFares(structuredClone(DEFAULT_VEHICLE_FARES));
     form.reset({
       status: 'scheduled',
       totalSeats: 200,
       availableSeats: 200,
       baseFare: 0,
+      vehicleCapacity: 0,
       amenities: '',
     });
     setShowModal(true);
@@ -92,6 +107,9 @@ export default function TripManagement() {
     setVesselImageUrl(trip.vesselImage || '');
     setAmenityTags(trip.amenities || []);
     setAmenityInput('');
+    setVehicleFares(trip.vehicleFares && Object.keys(trip.vehicleFares).length > 0
+      ? structuredClone(trip.vehicleFares)
+      : structuredClone(DEFAULT_VEHICLE_FARES));
     form.reset({
       tripName: trip.tripName,
       vesselName: trip.vesselName,
@@ -105,6 +123,7 @@ export default function TripManagement() {
       totalSeats: trip.totalSeats,
       availableSeats: trip.availableSeats,
       baseFare: trip.pricing.economy,
+      vehicleCapacity: trip.vehicleCapacity ?? 0,
     });
     setShowModal(true);
   }
@@ -116,6 +135,7 @@ export default function TripManagement() {
     setEditingTrip(null);
     setAmenityTags([]);
     setAmenityInput('');
+    setVehicleFares(structuredClone(DEFAULT_VEHICLE_FARES));
   }
 
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -176,6 +196,8 @@ export default function TripManagement() {
           business:   Number(data.baseFare),
           firstClass: Number(data.baseFare),
         },
+        vehicleFares,
+        vehicleCapacity: Number(data.vehicleCapacity),
         amenities: amenityTags,
       };
 
@@ -409,7 +431,7 @@ export default function TripManagement() {
                     {errors.departureDate && <p className="text-red-500 text-xs mt-1">Required</p>}
                   </div>
                   <div>
-                    <label className={labelCls}>Departure Time *</label>
+                    <label className={labelCls}>Estimated Departure Time *</label>
                     <input {...form.register('departureTime')} type="time" className={inputCls} />
                     {errors.departureTime && <p className="text-red-500 text-xs mt-1">Required</p>}
                   </div>
@@ -419,7 +441,7 @@ export default function TripManagement() {
                     {errors.arrivalDate && <p className="text-red-500 text-xs mt-1">Required</p>}
                   </div>
                   <div>
-                    <label className={labelCls}>Arrival Time *</label>
+                    <label className={labelCls}>Estimated Arrival Time *</label>
                     <input {...form.register('arrivalTime')} type="time" className={inputCls} />
                     {errors.arrivalTime && <p className="text-red-500 text-xs mt-1">Required</p>}
                   </div>
@@ -429,7 +451,7 @@ export default function TripManagement() {
               {/* Capacity */}
               <div>
                 <SectionHeader icon={Users} title="Capacity" />
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className={labelCls}>Total Seats</label>
                     <input {...form.register('totalSeats')} type="number" min={1} className={inputCls} />
@@ -438,7 +460,38 @@ export default function TripManagement() {
                     <label className={labelCls}>Available Seats</label>
                     <input {...form.register('availableSeats')} type="number" min={0} className={inputCls} />
                   </div>
+                  <div>
+                    <label className={labelCls}>Vehicle Capacity</label>
+                    <input {...form.register('vehicleCapacity')} type="number" min={0} className={inputCls} placeholder="0 = unlimited" />
+                    <p className="text-xs text-navy-400 mt-1">Max vehicles per trip (0 = no limit)</p>
+                  </div>
                 </div>
+              </div>
+
+              {/* Vehicle Fares */}
+              <div>
+                <SectionHeader icon={Car} title="Vehicle Fares (₱)" />
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {Object.entries(vehicleFares).map(([key, v]) => (
+                    <div key={key} className="border border-navy-100 rounded-xl p-3">
+                      <label className="text-xs font-medium text-navy-600 block mb-1.5">{v.label}</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400 text-sm font-medium">₱</span>
+                        <input
+                          type="number"
+                          min={0}
+                          value={v.fare}
+                          onChange={(e) => setVehicleFares(prev => ({
+                            ...prev,
+                            [key]: { ...prev[key], fare: Number(e.target.value) || 0 }
+                          }))}
+                          className={`${inputCls} pl-7`}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-navy-400 mt-2">Edit fares per vehicle type for this trip. Set to 0 to disable a vehicle type.</p>
               </div>
 
               {/* Pricing */}

@@ -14,6 +14,11 @@ export interface User {
 export type TripStatus = 'scheduled' | 'boarding' | 'departed' | 'arrived' | 'cancelled';
 export type SeatClass = 'Economy' | 'Business' | 'First Class';
 
+export interface VehicleFareConfig {
+  label: string;
+  fare: number;
+}
+
 export interface Trip {
   id: string;
   tripName: string;
@@ -35,6 +40,9 @@ export interface Trip {
     business: number;
     firstClass: number;
   };
+  vehicleFares?: Record<string, VehicleFareConfig>;
+  vehicleCapacity?: number;
+  vehiclesBooked?: number;
   amenities: string[];
   createdAt: Date;
   updatedAt: Date;
