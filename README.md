@@ -4,7 +4,7 @@ A full-stack maritime ticketing platform built with **React + TypeScript**, **Fi
 
 ---
 
-## 📐 System Architecture (follows your DFDs)
+## System Architecture (follows your DFDs)
 
 | DFD Level | Process | Implementation |
 |-----------|---------|----------------|
@@ -29,7 +29,7 @@ A full-stack maritime ticketing platform built with **React + TypeScript**, **Fi
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
@@ -46,7 +46,7 @@ A full-stack maritime ticketing platform built with **React + TypeScript**, **Fi
 
 ---
 
-## 🚀 Setup Instructions
+## Setup Instructions
 
 ### Step 1 — Install dependencies
 ```bash
@@ -95,7 +95,7 @@ npm run dev
 
 ---
 
-## 👤 Creating an Admin Account
+## Creating an Admin Account
 
 1. Register at `/auth` (creates a **passenger** account)
 2. Firebase Console → Firestore → `users` → your UID doc
@@ -104,7 +104,7 @@ npm run dev
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 src/
@@ -135,7 +135,7 @@ src/
 
 ---
 
-## 🎨 Design System (maritime navy + gold)
+## Design System (maritime navy + gold)
 
 | Token | Hex | Usage |
 |-------|-----|-------|
@@ -148,7 +148,7 @@ src/
 
 ---
 
-## ✅ Feature Checklist
+## Feature Checklist
 
 - [x] Firebase Auth — email/password register & login
 - [x] Role-based routing (Passenger / Admin)
