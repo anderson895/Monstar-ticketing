@@ -1,4 +1,4 @@
-# 🚢 MonStar Ship — Online Ticketing & Booking System
+# MonStar Ship — Online Ticketing & Booking System
 
 A full-stack maritime ticketing platform built with **React + TypeScript**, **Firebase**, **Cloudinary**, **Tailwind CSS**, and **shadcn/ui** patterns.
 
