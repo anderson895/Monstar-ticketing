@@ -2,7 +2,6 @@
 
 A full-stack maritime ticketing platform built with **React + TypeScript**, **Firebase**, **Cloudinary**, **Tailwind CSS**, and **shadcn/ui** patterns.
 
----
 
 ## System Architecture (follows your DFDs)
 
